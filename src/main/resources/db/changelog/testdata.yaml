@@ -1,0 +1,60 @@
+databaseChangeLog:
+      - changeSet:
+              id: 20230709-1
+              author: KanBen86
+              comment: Importing the testdata to the contries table
+              changes:
+                    - insert:
+                            tableName: country
+                            columns:
+                                  - column:
+                                          name: id
+                                          value: "1"
+                                  - column:
+                                          name: name
+                                          value: "USA"
+                    - insert:
+                            tableName: country
+                            columns:
+                                  - column:
+                                          name: id
+                                          value: "2"
+                                  - column:
+                                          name: name
+                                          value: "France"
+                    - insert:
+                            tableName: country
+                            columns:
+                                  - column:
+                                          name: id
+                                          value: "3"
+                                  - column:
+                                          name: name
+                                          value: "Brasil"
+                    - insert:
+                            tableName: country
+                            columns:
+                                  - column:
+                                          name: id
+                                          value: "4"
+                                  - column:
+                                          name: name
+                                          value: "Germany"
+                    - insert:
+                            tableName: country
+                            columns:
+                                  - column:
+                                          name: id
+                                          value: "5"
+                                  - column:
+                                          name: name
+                                          value: "Italy"
+                    - insert:
+                            tableName: country
+                            columns:
+                                  - column:
+                                          name: id
+                                          value: "6"
+                                  - column:
+                                          name: name
+                                          value: "Canada"

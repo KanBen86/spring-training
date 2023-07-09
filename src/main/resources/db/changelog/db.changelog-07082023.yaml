@@ -1,0 +1,17 @@
+databaseChangeLog:
+- changeSet:
+    id: 20230708-1
+    author: KanBen86
+    context: initialitaion
+    createTable:
+      tableName: country
+      columns:
+      - column:
+          name: id
+          type: bigint
+          autoIncrement: true
+          constraints:
+            primaryKey: true
+      - column:
+          name: name
+          type: varchar(250)

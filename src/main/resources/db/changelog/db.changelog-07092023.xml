@@ -1,0 +1,336 @@
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd"
+    objectQuotingStrategy="QUOTE_ALL_OBJECTS">
+    <property name="attr_byte_type" value="BLOB" dbms="db2" />
+    <property name="attr_byte_type" value="BLOB" dbms="derby" />
+    <property name="attr_byte_type" value="LONGVARBINARY" dbms="h2" />
+    <property name="attr_byte_type" value="LONGVARBINARY" dbms="hsqldb" />
+    <property name="attr_byte_type" value="BLOB" dbms="mysql" />
+    <property name="attr_byte_type" value="BLOB" dbms="mariadb" />
+    <property name="attr_byte_type" value="BLOB" dbms="oracle" />
+    <property name="attr_byte_type" value="BYTEA" dbms="postgresql" />
+    <property name="attr_byte_type" value="BLOB" dbms="sqlite" />
+    <property name="attr_byte_type" value="IMAGE" dbms="mssql" />
+    <property name="attr_byte_type" value="IMAGE" dbms="sybase" />
+
+
+    <changeSet id="20230709-1" author="wwerner">
+        <comment>Spring Security Authentication - Users, Authorities and ACLs</comment>
+        <comment>For the initial schema definition see
+            https://docs.spring.io/spring-security/site/docs/current/reference/html/appendix-schema.html
+        </comment>
+
+        <!-- Base Tables -->
+        <createTable tableName="user">
+            <column name="name" type="varchar(50)">
+                <constraints primaryKey="true" primaryKeyName="pk-user" nullable="false" />
+            </column>
+            <column name="password" type="varchar(100)">
+                <constraints nullable="false" />
+            </column>
+            <column name="enabled" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <createTable tableName="user_authority">
+            <column name="user_name" type="varchar(50)">
+                <constraints nullable="false" />
+            </column>
+            <column name="authority" type="varchar(50)">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <addPrimaryKey constraintName="pk-user_authority" tableName="user_authority"
+            columnNames="user_name,authority" />
+        <addForeignKeyConstraint constraintName="fk-user_authority-user"
+            baseTableName="user_authority"
+            baseColumnNames="user_name" referencedTableName="user"
+            referencedColumnNames="name" />
+        <createIndex tableName="user_authority" indexName="ix-user_authority-user_name">
+            <column name="user_name" />
+            <column name="authority" />
+        </createIndex>
+
+        <!-- Groups -->
+        <createTable tableName="group">
+            <column name="id" type="bigint" autoIncrement="true" startWith="1" incrementBy="1">
+                <constraints primaryKey="true" primaryKeyName="pk-group" />
+            </column>
+            <column name="name" type="varchar(50)">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+
+        <createTable tableName="group_authority">
+            <column name="group_id" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="authority" type="varchar(50)">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="group_authority" baseColumnNames="group_id"
+            constraintName="fk_group_authorities_group"
+            referencedColumnNames="id" referencedTableName="group" />
+
+        <createTable tableName="group_member">
+            <column name="id" type="bigint" autoIncrement="true" startWith="1" incrementBy="1">
+                <constraints primaryKey="true" primaryKeyName="pk-group_member" />
+            </column>
+            <column name="user_name" type="varchar(50)">
+                <constraints nullable="false" />
+            </column>
+            <column name="group_id" type="bigint">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+
+        <addForeignKeyConstraint baseTableName="group_member" baseColumnNames="group_id"
+            constraintName="fk-group_member-group" referencedTableName="group"
+            referencedColumnNames="id" />
+
+        <!-- Remember me token omitted -->
+
+        <!-- ACLs -->
+        <createTable tableName="acl_sid">
+            <column name="id" type="bigint" autoIncrement="true" startWith="100" incrementBy="1">
+                <constraints primaryKey="true" primaryKeyName="pk-acl_sid-id" nullable="false" />
+            </column>
+            <column name="principal" type="boolean">
+                <constraints nullable="false" />
+            </column>
+            <column name="sid" type="varchar(100)">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="acl_sid" columnNames="sid,principal"
+            constraintName="unique_uk_1" />
+
+        <createTable tableName="acl_class">
+            <column name="id" type="bigint" autoIncrement="true" startWith="100" incrementBy="1">
+                <constraints primaryKey="true" primaryKeyName="pk-acl_class-id" nullable="false" />
+            </column>
+            <column name="class" type="varchar(100)">
+                <constraints unique="true" nullable="false" />
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="acl_class" columnNames="class" constraintName="unique_uk_2" />
+
+        <createTable tableName="acl_object_identity">
+            <column name="id" type="bigint" autoIncrement="true" startWith="100" incrementBy="1">
+                <constraints primaryKey="true" primaryKeyName="pk-acl_object_identity-id"
+                    nullable="false" />
+            </column>
+            <column name="object_id_class" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="object_id_identity" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="parent_object" type="bigint" />
+            <column name="owner_sid" type="bigint" />
+            <column name="entries_inheriting" type="boolean">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="acl_object_identity"
+            columnNames="object_id_class,object_id_identity" />
+        <addForeignKeyConstraint baseTableName="acl_object_identity" baseColumnNames="parent_object"
+            constraintName="foreign_fk_1" referencedTableName="acl_object_identity"
+            referencedColumnNames="id" />
+        <addForeignKeyConstraint baseTableName="acl_object_identity"
+            baseColumnNames="object_id_class"
+            constraintName="foreign_fk_2" referencedTableName="acl_class"
+            referencedColumnNames="id" />
+        <addForeignKeyConstraint baseTableName="acl_object_identity" baseColumnNames="owner_sid"
+            constraintName="foreign_fk_3" referencedTableName="acl_sid"
+            referencedColumnNames="id" />
+
+        <createTable tableName="acl_entry">
+            <column name="id" type="bigint" autoIncrement="true" startWith="100" incrementBy="1">
+                <constraints primaryKey="true" primaryKeyName="pk-acl_enry-id" nullable="false" />
+            </column>
+            <column name="acl_object_identity" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="ace_order" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="sid" type="bigint">
+                <constraints nullable="false" />
+            </column>
+            <column name="mask" type="integer">
+                <constraints nullable="false" />
+            </column>
+            <column name="granting" type="boolean">
+                <constraints nullable="false" />
+            </column>
+            <column name="audit_success" type="boolean">
+                <constraints nullable="false" />
+            </column>
+            <column name="audit_failure" type="boolean">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <addUniqueConstraint tableName="acl_entry" columnNames="acl_object_identity,ace_order" />
+        <addForeignKeyConstraint baseTableName="acl_entry" baseColumnNames="acl_object_identity"
+            constraintName="foreign_fk_4" referencedTableName="acl_object_identity"
+            referencedColumnNames="id" />
+        <addForeignKeyConstraint baseTableName="acl_entry" baseColumnNames="sid"
+            constraintName="foreign_fk_5"
+            referencedTableName="acl_sid"
+            referencedColumnNames="id" />
+    </changeSet>
+
+
+    <!-- Spring Oauth2 Schema, see
+    https://github.com/spring-projects/spring-security-oauth/blob/master/spring-security-oauth2/src/test/resources/schema.sql -->
+    <changeSet id="20230709-2" author="wwerner">
+        <createTable tableName="oauth_client_details">
+            <column name="client_id" type="varchar(255)">
+                <constraints primaryKey="true" />
+            </column>
+            <column name="resource_ids" type="varchar(256)" />
+            <column name="client_secret" type="varchar(256)" />
+            <column name="scope" type="varchar(256)" />
+            <column name="authorized_grant_types" type="varchar(256)" />
+            <column name="web_server_redirect_uri" type="varchar(256)" />
+            <column name="authorities" type="varchar(256)" />
+            <column name="access_token_validity" type="int" />
+            <column name="refresh_token_validity" type="int" />
+            <column name="additional_information" type="varchar(4096)" />
+            <column name="autoapprove" type="varchar(256)" />
+        </createTable>
+
+        <createTable tableName="oauth_client_token">
+            <column name="token_id" type="varchar(256)"></column>
+            <column name="token" type="longvarbinary"></column>
+            <column name="authentication_id" type="varchar(256)">
+                <constraints primaryKey="true" />
+            </column>
+            <column name="user_name" type="varchar(256)"></column>
+            <column name="client_id" type="varchar(256)"></column>
+        </createTable>
+
+        <createTable tableName="oauth_access_token">
+            <column name="token_id" type="varchar(256)"></column>
+            <column name="token" type="longvarbinary"></column>
+            <column name="authentication_id" type="varchar(256)">
+                <constraints primaryKey="true" />
+            </column>
+            <column name="user_name" type="varchar(256)"></column>
+            <column name="client_id" type="varchar(256)"></column>
+            <column name="authentication" type="longvarbinary"></column>
+            <column name="refresh_token" type="varchar(256)"></column>
+        </createTable>
+
+        <createTable tableName="oauth_refresh_token">
+            <column name="token_id" type="varchar(256)"></column>
+            <column name="token" type="longvarbinary"></column>
+            <column name="authentication" type="longvarbinary"></column>
+        </createTable>
+
+        <createTable tableName="oauth_code">
+            <column name="code" type="varchar(256)"></column>
+            <column name="authentication" type="longvarbinary"></column>
+        </createTable>
+
+        <createTable tableName="oauth_approvals">
+            <column name="userId" type="varchar(256)"></column>
+            <column name="clientId" type="varchar(256)"></column>
+            <column name="scope" type="varchar(256)"></column>
+            <column name="status" type="varchar(10)"></column>
+            <column name="expiresAt" type="timestamp"></column>
+            <column name="lastModifiedAt" type="timestamp"></column>
+        </createTable>
+
+        <createTable tableName="ClientDetails">
+            <column name="appId" type="varchar(256)">
+                <constraints primaryKey="true" />
+            </column>
+            <column name="resourceIds" type="varchar(256)" />
+            <column name="appSecret" type="varchar(256)" />
+            <column name="scope" type="varchar(256)" />
+            <column name="grantTypes" type="varchar(256)" />
+            <column name="redirectUrl" type="varchar(256)" />
+            <column name="authorities" type="varchar(256)" />
+            <column name="access_token_validity" type="int" />
+            <column name="refresh_token_validity" type="int" />
+            <column name="additionalInformation" type="varchar(4096)" />
+            <column name="autoApproveScopes" type="varchar(256)" />
+        </createTable>
+    </changeSet>
+
+    <changeSet id="20230709-3" author="dexterxx">
+
+        <createTable tableName="spring_session">
+            <column name="primary_id" type="CHAR(36)">
+                <constraints
+                    nullable="false"
+                    primaryKey="true"
+                    primaryKeyName="spring_session_pk"
+                />
+            </column>
+            <column name="session_id" type="CHAR(36)">
+                <constraints
+                    nullable="false"
+                    unique="true"
+                    uniqueConstraintName="spring_session_ix1"
+                />
+            </column>
+            <column name="creation_time" type="BIGINT">
+                <constraints nullable="false" />
+            </column>
+            <column name="last_access_time" type="BIGINT">
+                <constraints nullable="false" />
+            </column>
+            <column name="max_inactive_interval" type="INT">
+                <constraints nullable="false" />
+            </column>
+            <column name="expiry_time" type="BIGINT">
+                <constraints nullable="false" />
+            </column>
+            <column name="principal_name" type="VARCHAR(100)" />
+        </createTable>
+
+        <createIndex tableName="spring_session" indexName="spring_session_ix2">
+            <column name="expiry_time" />
+        </createIndex>
+
+        <createIndex tableName="spring_session" indexName="spring_session_ix3">
+            <column name="principal_name" />
+        </createIndex>
+
+        <createTable tableName="spring_session_attributes">
+            <column name="session_primary_id" type="CHAR(36)">
+                <constraints
+                    foreignKeyName="spring_session_attributes_fk"
+                    referencedTableName="spring_session"
+                    referencedColumnNames="primary_id"
+                    deleteCascade="true"
+                    nullable="false"
+                />
+            </column>
+            <column name="attribute_name" type="VARCHAR(200)">
+                <constraints nullable="false" />
+            </column>
+            <column name="attribute_bytes" type="${attr_byte_type}">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+
+        <addPrimaryKey
+            constraintName="spring_session_attributes_pk"
+            tableName="spring_session_attributes"
+            columnNames="session_primary_id, attribute_name"
+        />
+
+        <!-- AUTOROLLBACK -->
+    </changeSet>
+
+</databaseChangeLog>
